@@ -9,7 +9,7 @@ import os
 os.system('color')
 getter = h.Climb_Getter()
 intro = """Welcome to ZynDex!
-To quit, type a single character then press [enter].
+To quit, type [a] then press [enter].
 To search a problem, type its name then press [enter].
 ------------------------------------------------------"""
 print(intro)

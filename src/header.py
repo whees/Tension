@@ -12,9 +12,10 @@ class Climb:
     SYMS = {5: '$', 6: 'O', 7:'#',8: '*' }
     COLS = {5: 'green', 6: 'blue', 7: 'red', 8:'magenta'}
 
-    def __init__(self, climb_name, climb_matrix):
+    def __init__(self, climb_name):
         self.name = climb_name
-        self.matrix = climb_matrix
+        self.matrix = []
+        self.grade = None
         
     def string(self):
         string = ''
@@ -43,6 +44,7 @@ class Climb:
                     string += ' '
             string += '|\n'
         string += '-' * (SX+C+2) + '\n'
+        string += f'Difficulty: {self.grade}'
         return string
     
     def is_near(self,xy0,xy1):
@@ -54,32 +56,43 @@ class Climb_Getter:
     
     def get(self,climb_name):
         self.name=climb_name
+        climb = Climb(climb_name)
         con = sql.connect('dbs/Tension.sqlite')
         cur = con.cursor()
         fetched = cur.execute(f'SELECT frames FROM climbs WHERE name=\'{climb_name}\';').fetchone()
         climb_string = self.valid_fetch(fetched)
-        climb_matrix = []
+        fetched = cur.execute(f'SELECT uuid FROM climbs WHERE name=\'{climb_name}\';').fetchone()
+        climb_uuid = self.valid_fetch(fetched)
+        fetched = cur.execute(f'SELECT difficulty_average FROM climb_stats WHERE climb_uuid=\'{climb_uuid}\';').fetchone()
+        climb.grade = int(self.valid_fetch(fetched))
         place_roles = climb_string[1:].split('p')
         for place_role in place_roles:
             place, role = place_role.split('r')
             fetched = cur.execute(f'SELECT hole_id FROM placements WHERE id={place};').fetchone()
             hole_id = self.valid_fetch(fetched)
             fetched = cur.execute(f'SELECT x FROM holes WHERE id={hole_id};').fetchone()
-            x = self.valid_fetch(fetched)
+            x = int(self.valid_fetch(fetched))
             fetched = cur.execute(f'SELECT y FROM holes WHERE id={hole_id};').fetchone()
-            y = self.valid_fetch(fetched)
-            climb_matrix += [(int(x),int(y),int(role))]
+            y = int(self.valid_fetch(fetched))
+            climb.matrix += [(x,y,int(role))]
         con.close()
-        climb_matrix = sorted(climb_matrix,key=lambda x: x[2])
-        return Climb(climb_name, climb_matrix)
+        climb.matrix = sorted(climb.matrix,key=lambda x: x[2])
+        return self.valid_climb(climb)
     
     def valid_fetch(self,fetched):
         if fetched is None:
             self.error()
         return fetched[0]
-        
+    
+    def valid_climb(self,climb):
+        if not len(climb.matrix):
+            self.error()
+        if not isinstance(climb.grade,int):
+            self.error()
+        return climb
+    
     def error(self):
-        raise Exception(f'{self.name} does not exist in archive.')
+        raise Exception(f'\'{self.name}\' does not exist in archive.')
     
     
     
