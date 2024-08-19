@@ -5,6 +5,8 @@ Created on Sun Aug 18 21:02:50 2024
 @author: lcuev
 """
 import src.header as h 
+import os
+os.system('color')
 getter = h.Climb_Getter()
 
 while True:

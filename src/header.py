@@ -5,6 +5,7 @@ Created on Sun Aug 18 13:09:37 2024
 @author: lcuev
 """
 import sqlite3 as sql
+from termcolor import colored
 
 def is_near(xy0,xy1):
     return (xy0[0] - xy1[0]) ** 2 + (xy0[1] - xy1[1]) ** 2 < 2
@@ -12,6 +13,7 @@ def is_near(xy0,xy1):
 class Climb:
     ROLES = {5:'start', 6:'middle',7:'finish',8:'foot'}
     SYMS = {5: '$', 6: 'O', 7:'#',8: '*' }
+    COLS = {5: 'green', 6: 'blue', 7: 'red', 8:'magenta'}
 
     def __init__(self, climb_name, climb_matrix):
         self.name = climb_name
@@ -37,7 +39,7 @@ class Climb:
                 occupied = False
                 for x_,y_,role in self.matrix:
                     if is_near((x,y), (x_,y_)):
-                        string += self.SYMS[role]
+                        string += colored(self.SYMS[role],self.COLS[role])
                         occupied = True
                         break
                 if not occupied:
