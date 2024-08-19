@@ -8,17 +8,23 @@ import src.header as h
 import os
 os.system('color')
 getter = h.Climb_Getter()
+intro = """Welcome to ZynDex!
+To quit, type a single character then press [enter].
+To search a problem, type its name then press [enter].
+------------------------------------------------------"""
+print(intro)
 
 while True:
     try:
-        climb_name = input('Name: ')
+        climb_name = input(': ')
         climb = getter.get(climb_name)
         print(climb.climb_string())
-    except NameError as error:
+    except KeyError:
+        print('\nQuitting...\n')
+        break
+    except Exception as error:
         print(error)
         continue
-    except:
-        break
     
-print('\nSession terminating...\n')
+
 

@@ -7,9 +7,6 @@ Created on Sun Aug 18 13:09:37 2024
 import sqlite3 as sql
 from termcolor import colored
 
-def is_near(xy0,xy1):
-    return (xy0[0] - xy1[0]) ** 2 + (xy0[1] - xy1[1]) ** 2 < 2
-
 class Climb:
     ROLES = {5:'start', 6:'middle',7:'finish',8:'foot'}
     SYMS = {5: '$', 6: 'O', 7:'#',8: '*' }
@@ -38,7 +35,7 @@ class Climb:
                 x, y = C*(X-SX//2), D*(SY - Y)
                 occupied = False
                 for x_,y_,role in self.matrix:
-                    if is_near((x,y), (x_,y_)):
+                    if self.is_near((x,y), (x_,y_)):
                         string += colored(self.SYMS[role],self.COLS[role])
                         occupied = True
                         break
@@ -48,33 +45,43 @@ class Climb:
         string += '-' * (SX+C+2) + '\n'
         return string
     
+    def is_near(self,xy0,xy1):
+        return (xy0[0] - xy1[0]) ** 2 + (xy0[1] - xy1[1]) ** 2 <= 1
+    
 class Climb_Getter:
     def __init__(self):
         pass
     
     def get(self,climb_name):
+        self.name=climb_name
         con = sql.connect('dbs/Tension.sqlite')
         cur = con.cursor()
-        climb_string = cur.execute(f'SELECT frames FROM climbs WHERE name=\'{climb_name}\';').fetchone()
-        if climb_string is None:
-            raise NameError(f'{climb_name} does not exist in archive.')
-        if not len(climb_string):
-            self.error()
-        climb_string = climb_string[0]
+        fetched = cur.execute(f'SELECT frames FROM climbs WHERE name=\'{climb_name}\';').fetchone()
+        climb_string = self.valid_fetch(fetched)
         climb_matrix = []
         place_roles = climb_string[1:].split('p')
         for place_role in place_roles:
             place, role = place_role.split('r')
-            hole_id = cur.execute(f'SELECT hole_id FROM placements WHERE id={place};').fetchone()[0]
-            x = cur.execute(f'SELECT x FROM holes WHERE id={hole_id};').fetchone()[0]
-            y = cur.execute(f'SELECT y FROM holes WHERE id={hole_id};').fetchone()[0]
+            fetched = cur.execute(f'SELECT hole_id FROM placements WHERE id={place};').fetchone()
+            hole_id = self.valid_fetch(fetched)
+            fetched = cur.execute(f'SELECT x FROM holes WHERE id={hole_id};').fetchone()
+            x = self.valid_fetch(fetched)
+            fetched = cur.execute(f'SELECT y FROM holes WHERE id={hole_id};').fetchone()
+            y = self.valid_fetch(fetched)
             climb_matrix += [(int(x),int(y),int(role))]
         con.close()
         climb_matrix = sorted(climb_matrix,key=lambda x: x[2])
         return Climb(climb_name, climb_matrix)
+    
+    def valid_fetch(self,fetched):
+        if fetched is None:
+            self.error()
+        return fetched[0]
         
     def error(self):
-        raise Exception("CLimb Getter failed.")
+        raise Exception(f'{self.name} does not exist in archive.')
+    
+    
     
 
 
